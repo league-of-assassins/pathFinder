@@ -13,6 +13,8 @@ private:
 
 	RenderWindow window;
 
+	int frame = 0;
+
 	Event event;
 
 	Color penColor;
@@ -39,14 +41,14 @@ private:
 		{1, 1}
 	};
 	int sideTotal = 8;
+	int parentX, parentY;
+	bool pathLoop = false;
 
 	int clickedX = 0, clickedY = 0;
 	int oldX = -1, oldY;
 	int xStart, xEnd, yStart, yEnd;
 	bool leftClicked = false, rightClicked = false, clicked = false;
 	bool reset = false;
-
-	int frames = 0;
 
 public:
 
@@ -62,13 +64,15 @@ public:
 
 	void pathDraw(int currentX, int currentY);
 
-	void pathFinderLoop(int parentX, int parentY, bool& stop);
+	void pathFinderLoop();
 
 	void pathFinderInit();
 
 	void mouseClick();
 
 	void displays();
+
+	void frames();
 
 	pathFinder();
 };

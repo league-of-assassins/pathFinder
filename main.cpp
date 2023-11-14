@@ -38,11 +38,12 @@ void pathFinder::events() {
 				window.close();
 			}
 
+			//RESET BOARD
 			else if (event.key.code == Keyboard::R) {
 				reset = true;
 			}
 
-			//CHANGE PEN COLOR IF PRESSED E
+			//CHANGE PEN COLOR
 			else if (event.key.code == Keyboard::E) {
 				if (penColor == Color::Black) {
 					penColor = Color::White;
@@ -150,8 +151,6 @@ void pathFinder::pathDraw(int currentX, int currentY) {
 		if ((currentX - 1 <= xStart && currentX + 1 >= xStart) &&
 			(currentY - 1 <= yStart && currentY + 1 >= yStart)) {
 
-
-
 			stop = true;
 			break;
 		}
@@ -163,7 +162,7 @@ void pathFinder::pathDraw(int currentX, int currentY) {
 	}
 }
 
-void pathFinder::pathFinderLoop(int& parentX, int& parentY, bool& stop) {
+void pathFinder::pathFinderLoop() {
 	int subX, subY;
 	float addVal = 1;
 	bool walkable = false;
@@ -217,7 +216,7 @@ void pathFinder::pathFinderLoop(int& parentX, int& parentY, bool& stop) {
 				(subY - 1 <= yEnd && subY + 1 >= yEnd)) {
 				pathDraw(subX, subY);
 
-				stop = true;
+				pathLoop = false;
 				j = sideTotal - 1;
 				break;
 			}
@@ -243,7 +242,7 @@ void pathFinder::pathFinderLoop(int& parentX, int& parentY, bool& stop) {
 
 	//IF NO PATH
 	if (parentX == minI && parentY == minJ) {
-		stop = true;
+		pathLoop = false;
 		cout << "\n NO PATH \n";
 	}
 
@@ -255,29 +254,18 @@ void pathFinder::pathFinderLoop(int& parentX, int& parentY, bool& stop) {
 
 void pathFinder::pathFinderInit() {
 
-	int parentX = xStart;
-	int parentY = yStart;
+	pathLoop = true;
 
-	//RESET VALUE
+	parentX = xStart;
+	parentY = yStart;
+
+	//RESET VALUES
 	for (int i = 0; i < cubeLength; i++) {
 		for (int j = 0; j < cubeLength; j++) {
 			pathVal[i][j][0] = 99999;
 		}
 	}
-	pathVal[xStart][yStart][0] = 0;
-
-	bool stop = false;
-	while (!stop) {
-		if (frames % 1 == 0) {
-			pathFinderLoop(parentX, parentY, stop);
-		}
-
-		displays();
-
-		frames++;
-		if (frames == 10000) { frames = 0; }
-
-	}
+	pathVal[xStart][yStart][0] = 0;	
 }
 
 void pathFinder::mouseClick() {
@@ -342,11 +330,19 @@ pathFinder::pathFinder() {
 	{
 		events();
 
-		if (reset) resetColors();
+		if (pathLoop) {
+			if (frame % 1 == 0) pathFinderLoop();
+		}
 
-		mouseClick();
+		else {
+			if (reset) resetColors();
+
+			mouseClick();
+		}
 
 		displays();
+
+		frames();
 	}
 }
 
@@ -361,6 +357,11 @@ void pathFinder::displays() {
 	}
 
 	window.display();
+}
+
+void pathFinder::frames() {
+	frame++;
+	if (frame == 10000) frame = 0;
 }
 
 
