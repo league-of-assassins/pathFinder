@@ -4,32 +4,35 @@
 using namespace std;
 using namespace sf;
 
+
+const int cubeLength = 50;
+
+
 class pathFinder {
 private:
 
 	float width = 800, height = 800;
 
-	Vector2f windowGap;
-
 	RenderWindow window;
+
+	Vector2i windowGap;
 
 	int frame = 0;
 
 	Event event;
 
-	Color penColor;
 
 
-	RectangleShape cube[50][50];
-
-	int cubeLength = 50;
+	RectangleShape cube[cubeLength][cubeLength];
 	int cubeSize = height / cubeLength;
 
+	Color cubeColor;
 
-	int rightClickCount = 0;
 
-	int parentMarker[50][50][2] = {};
-	float pathVal[50][50][1] = {};
+
+	int parentMarker[cubeLength][cubeLength][2] = {};
+	float pathVal[cubeLength][cubeLength][1] = {};
+
 	int side[8][2] = {
 		{0, -1},
 		{1, 0},
@@ -40,13 +43,29 @@ private:
 		{-1, 1},
 		{1, 1}
 	};
+
 	int sideTotal = 8;
-	int parentX, parentY;
+
+	Vector2i parent;
+
+	Vector2i pathStart, pathEnd;
+
+	Color pathStartColor, pathEndColor;
+
+	bool pathStartMarked = false;
+
+	Color pathColor;
+	Color exploredColor;
+
 	bool pathLoop = false;
 
-	int clickedX = 0, clickedY = 0;
-	int oldX = -1, oldY;
-	int xStart, xEnd, yStart, yEnd;
+
+
+	Vector2i mousePos;
+	Vector2i mouseOldPos;
+
+	Color penColor;
+
 	bool leftClicked = false, rightClicked = false, clicked = false;
 	bool reset = false;
 
@@ -60,15 +79,21 @@ public:
 
 	void resetColors();
 
-	void drawLine();
+	void drawLine(Vector2i start, Vector2i end);
 
-	void pathDraw(int currentX, int currentY);
+	void pathDraw(Vector2i pos);
 
 	void pathFinderLoop();
 
 	void pathFinderInit();
 
-	void mouseClick();
+	void leftMouseLogic();
+
+	void rightMouseLogic();
+
+	void mouseLogic();
+
+	void general();
 
 	void displays();
 
