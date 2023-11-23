@@ -96,12 +96,12 @@ void pathFinder::events() {
 
 			//CHANGE PEN COLOR
 			else if (event.key.code == Keyboard::E) {
-				if (penColor == Color::White) {
-					penColor = cubeColor;
+				if (penColor == cubeColor) {
+					penColor = Color::White;
 				}
 
 				else {
-					penColor = Color::White;
+					penColor = cubeColor;
 				}
 			}
 		}
@@ -231,21 +231,45 @@ void pathFinder::pathDraw(Vector2i pos) {
 	bool stop = false;
 	while (!stop) {
 
-		cube[pos.x][pos.y].setFillColor(pathColor);
+		temp.x = parentMarker[pos.x][pos.y][0];
+		temp.y = parentMarker[pos.x][pos.y][1];
 
-		if ((pos.x - 1 <= pathStart.x && pos.x + 1 >= pathStart.x) &&
-			(pos.y - 1 <= pathStart.y && pos.y + 1 >= pathStart.y)) {
+		pos += temp;
+
+		if (pos == pathStart) {
 
 			stop = true;
 			break;
 		}
 
-		temp.x = parentMarker[pos.x][pos.y][0];
-		temp.y = parentMarker[pos.x][pos.y][1];
-
-		pos.x += temp.x;
-		pos.y += temp.y;
+		cube[pos.x][pos.y].setFillColor(pathColor);
 	}
+}
+
+
+
+bool pathFinder::insideBorder(int x, int y) {
+
+	if (x >= 0 && x < cubeLength &&
+		y >= 0 && y < cubeLength) {
+
+		return true;
+	}
+
+	return false;
+}
+
+
+
+bool pathFinder::walkableColor(int x, int y) {
+
+	if (cube[x][y].getFillColor() == cubeColor ||
+		cube[x][y].getFillColor() == pathEndColor) {
+
+		return true;
+	}
+
+	return false;
 }
 
 
@@ -258,92 +282,91 @@ void pathFinder::pathFinderLoop() {
 
 	bool walkable = false;
 
-	//IF END
-	if ((parent.x - 1 <= pathEnd.x && parent.x + 1 >= pathEnd.x) &&
-		(parent.y - 1 <= pathEnd.y && parent.y + 1 >= pathEnd.y)) {
 
-		pathDraw(parent);
+	//SET EXPLORED
+	if (cube[parent.x][parent.y].getFillColor() == cubeColor) {
+
+		cube[parent.x][parent.y].setFillColor(exploredColor);
+	}
+
+	//CHANGE VALS AROUND PARENT
+	for (int i = 0; i < sideTotal; i++) {
+
+		sub.x = parent.x + side[i][0];
+		sub.y = parent.y + side[i][1];
+
+
+		//CHECK IF WALKABLE
+		if (insideBorder(sub.x, sub.y) &&
+			walkableColor(sub.x, sub.y)) {
+
+			if (i < 4) walkable = true;
+
+			else {
+				addVal = 1.41;
+
+
+				if (walkableColor(sub.x, parent.y) ||
+					walkableColor(parent.x, sub.y)) {
+
+					walkable = true;
+				}
+			}
+		}
+
+
+		if (walkable) {
+
+			walkable = false;
+
+
+			//CHANGE VAL IF LESS
+			if (pathVal[sub.x][sub.y][0] > pathVal[parent.x][parent.y][0] + addVal) {
+
+				pathVal[sub.x][sub.y][0] = pathVal[parent.x][parent.y][0] + addVal;
+
+				parentMarker[sub.x][sub.y][0] = -side[i][0];
+				parentMarker[sub.x][sub.y][1] = -side[i][1];
+			}
+		}
+	}
+
+	//FIND MIN NEXT PARENT
+	float minVal = 99999;
+	Vector2i minPos;
+
+	for (int i = 0; i < cubeLength; i++) {
+		for (int j = 0; j < cubeLength; j++) {
+
+			if (walkableColor(i, j) &&
+				pathVal[i][j][0] < minVal) {
+
+				minVal = pathVal[i][j][0];
+
+				minPos.x = i;
+				minPos.y = j;
+			}
+		}
+	}
+
+	//IF NO PATH
+	if (minVal == 99999) {
 
 		pathLoop = false;
+		cout << "\n NO PATH \n";
 	}
 
 	else {
-
-		//SET EXPLORED
-		if (cube[parent.x][parent.y].getFillColor() != pathStartColor) {
-
-			cube[parent.x][parent.y].setFillColor(exploredColor);
-		}
-
-		//CHANGE VALS AROUND PARENT
-		for (int i = 0; i < sideTotal; i++) {
-
-			sub.x = parent.x + side[i][0];
-			sub.y = parent.y + side[i][1];
+		parent = minPos;
+	}
 
 
-			//CHECK IF WALKABLE
-			if ((sub.x >= 0 && sub.x < cubeLength && sub.y >= 0 && sub.y < cubeLength) &&
-				cube[sub.x][sub.y].getFillColor() == cubeColor) {
+	//IF END
+	if (parent == pathEnd) {
 
-				if (i < 4) walkable = true;
+		pathLoop = false;
 
-				else {
-					addVal = 1.41;
-
-					if (cube[parent.x + side[i][0]][parent.y].getFillColor() == cubeColor ||
-						cube[parent.x][parent.y + side[i][1]].getFillColor() == cubeColor) {
-
-						walkable = true;
-					}
-				}
-			}
-
-
-			if (walkable) {
-
-				walkable = false;
-
-
-				//CHANGE VAL IF LESS
-				if (pathVal[sub.x][sub.y][0] > pathVal[parent.x][parent.y][0] + addVal) {
-
-					pathVal[sub.x][sub.y][0] = pathVal[parent.x][parent.y][0] + addVal;
-
-					parentMarker[sub.x][sub.y][0] = -side[i][0];
-					parentMarker[sub.x][sub.y][1] = -side[i][1];
-				}
-			}
-		}
-
-		//FIND MIN NEXT PARENT
-		float min = 99999;
-		int minI = 0, minJ = 0;
-
-		for (int i = 0; i < cubeLength; i++) {
-			for (int j = 0; j < cubeLength; j++) {
-				if (cube[i][j].getFillColor() == cubeColor) {
-					if (min > pathVal[i][j][0]) {
-						min = pathVal[i][j][0];
-						minI = i;
-						minJ = j;
-					}
-				}
-			}
-		}
-
-
-
-		//IF NO PATH
-		if (parent.x == minI && parent.y == minJ) {
-			pathLoop = false;
-			cout << "\n NO PATH \n";
-		}
-
-		else {
-			parent.x = minI;
-			parent.y = minJ;
-		}
+		pathDraw(parent);
 	}
 }
 
@@ -419,7 +442,7 @@ void pathFinder::mouseLogic() {
 		mousePos.y = (Mouse::getPosition().y - windowGap.y) / cubeSize;
 
 
-		if (mousePos.x >= 0 && mousePos.x < cubeLength && mousePos.y >= 0 && mousePos.y < cubeLength) {
+	if (insideBorder(mousePos.x, mousePos.y)) {
 
 			if (leftClicked) {
 				leftMouseLogic();

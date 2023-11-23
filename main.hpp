@@ -83,6 +83,10 @@ public:
 
 	void pathDraw(Vector2i pos);
 
+	bool insideBorder(int x, int y);
+
+	bool walkableColor(int x, int y);
+
 	void pathFinderLoop();
 
 	void pathFinderInit();
