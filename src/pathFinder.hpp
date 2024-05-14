@@ -55,7 +55,7 @@ private:
 
 	bool reset = false, togglePen = false;
 
-	bool started = false, pathLoop = false;
+	bool started = false, pathLoop = false, pathDrawing = false;
 
 
 
@@ -63,7 +63,7 @@ public:
 
 	PF();
 
-	void logic(sf::Vector2i mousePos);
+	void update(sf::Vector2i mousePos);
 
 	void draw(sf::RenderWindow& window);
 

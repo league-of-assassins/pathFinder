@@ -66,6 +66,8 @@ void PF::resetCells() {
 
 	reset = false;
 	started = false;
+	pathLoop = false;
+	pathDrawing = false;
 
 	for (auto& x : cell) {
 		for (auto& y : x) {
@@ -84,12 +86,12 @@ void PF::togglePenColor() {
 
 void PF::fillGap(const sf::Vector2i& start, const sf::Vector2i& end) {
 
-	float h = abs(end.x - start.x);
-	float v = abs(end.y - start.y);
+	const float h = abs(end.x - start.x);
+	const float v = abs(end.y - start.y);
 
-	float m = (h) ? (v / h) : 0;
+	const float m = (h) ? (v / h) : 0;
 
-	int length = (h > v) ? h : v;
+	const int length = (h > v) ? h : v;
 
 	sf::Vector2i side;
 	side.x = (end.x > start.x) ? 1 : -1;
@@ -97,7 +99,7 @@ void PF::fillGap(const sf::Vector2i& start, const sf::Vector2i& end) {
 
 	for (int n = 1; n < length; n++) {
 
-		sf::Vector2i pos = (h > v) ? sf::Vector2i(n, n * m) : (m) ? sf::Vector2i(n / m, n) : sf::Vector2i(0, n);
+		const sf::Vector2i pos = (h > v) ? sf::Vector2i(n, n * m) : (m) ? sf::Vector2i(n / m, n) : sf::Vector2i(0, n);
 
 		cell[start.x + pos.x * side.x][start.y + pos.y * side.y].status = penColor;
 	}
@@ -125,21 +127,11 @@ bool PF::walkableCell(const CellStatus& status) {
 
 void PF::pathDraw() {
 
-	bool loop = true;
-	while (loop) {
+	parent += cell[parent.x][parent.y].parent;
 
-		sf::Vector2i next(cell[parent.x][parent.y].parent);
+	if (cell[parent.x][parent.y].status == START) pathDrawing = false;
 
-		parent += next;
-
-		if (cell[parent.x][parent.y].status == START) {
-
-			loop = false;
-			break;
-		}
-
-		cell[parent.x][parent.y].status = PATH;
-	}
+	else cell[parent.x][parent.y].status = PATH;
 }
 
 void PF::pathFinderInit() {
@@ -152,7 +144,7 @@ void PF::pathFinderInit() {
 		}
 	}
 
-	cell[parent.x][parent.y].val = 0;	
+	cell[parent.x][parent.y].val = 0;
 }
 
 
@@ -170,23 +162,25 @@ void PF::pathFinderLoop() {
 
 			if (!x && !y) y++;
 
-			sf::Vector2i sub(parent.x + x, parent.y + y);
+			const sf::Vector2i sub(parent.x + x, parent.y + y);
 
 			bool walkable = false;
 
-			bool flat = (!x || !y);
-
-			float newVal = flat ? 1 : 1.41;
+			float newVal;
 
 			//CHECK IF WALKABLE
 			if (insideBorder(sub) && walkableCell(cell[sub.x][sub.y].status)) {
 
-				if (flat) {
+				//FLAT
+				if (!x || !y) {
 					walkable = true;
+					newVal = 1;
 				}
 
+				//CROSS
 				else if (walkableCell(cell[sub.x][parent.y].status) || walkableCell(cell[parent.x][sub.y].status)) {
 					walkable = true;
+					newVal = 1.41;
 				}
 			}
 
@@ -216,30 +210,21 @@ void PF::pathFinderLoop() {
 
 				minVal = cell[x][y].val;
 
-					minPos.x = x;
-					minPos.y = y;
+				minPos.x = x;
+				minPos.y = y;
 			}
 		}
 	}
 
-	//IF NO PATH
-	if (minVal == MAX_VAL) {
+	if (minVal != MAX_VAL) parent = minPos;
 
-		pathLoop = false;
-		std::cout << "\n NO PATH \n";
-	}
+	//NO PATH
+	else pathLoop = false;
 
-	else {
-		parent = minPos;
-	}
-
-
-	//IF END
+	//REACHED END
 	if (cell[parent.x][parent.y].status == END) {
-
 		pathLoop = false;
-
-		pathDraw();
+		pathDrawing = true;
 	}
 }
 
@@ -265,11 +250,10 @@ void PF::mouseActions(sf::Vector2i& mousePos) {
 	}
 
 	else if (rightClicked) {
-		rightClicked = false;
 
 		if (!started) {
-			parent = mousePos;
 			cell[mousePos.x][mousePos.y].status = START;
+			parent = mousePos;
 		}
 
 		else {
@@ -284,14 +268,15 @@ void PF::mouseActions(sf::Vector2i& mousePos) {
 
 
 
-void PF::logic(sf::Vector2i mousePos) {
+void PF::update(sf::Vector2i mousePos) {
 
-	if (pathLoop) pathFinderLoop();
+	keyActions();
 
-	else {
+	if (pathDrawing) pathDraw();
 
-		keyActions();
+	else if (pathLoop) pathFinderLoop();
 
-		mouseActions(mousePos);
-	}
+	else if (leftClicking || rightClicked) mouseActions(mousePos);
+
+	rightClicked = false;
 }
